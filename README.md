@@ -19,7 +19,7 @@
 - NapCat 重启一次就掉登录，原因和正确姿势
 - AstrBot 首次启动打印的密码是错的
 
-`docs/10-踩坑清单.md` 是全文精华。
+[`docs/pitfalls.md`](docs/pitfalls.md)（踩坑清单）是全文精华。
 
 ## 目录
 
@@ -29,7 +29,7 @@
 │  ├─ .env.example
 │  └─ napcat/onebot11.example.json
 ├─ docs/
-│  ├─ 10-踩坑清单.md
+│  ├─ pitfalls.md
 │  └─ build-log/2026-11-01.md   # 改造当夜的真实时间线
 └─ scripts/
    └─ healthcheck.sh            # 在线率与资源自检
