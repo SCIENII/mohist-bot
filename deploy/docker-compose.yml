@@ -1,0 +1,46 @@
+name: bot
+
+services:
+  napcat:
+    image: mlikiowa/napcat-docker:latest
+    container_name: napcat
+    restart: unless-stopped
+    environment:
+      MODE: ws
+      WEBUI_TOKEN: ${NAPCAT_WEBUI_TOKEN}
+    ports:
+      # 只绑本机：6099 是 QQ 账号控制台，暴露出去等于把号交给别人
+      - "127.0.0.1:6099:6099"   # WebUI：扫码登录 / OneBot 配置
+      - "127.0.0.1:3001:3001"   # OneBot v11 正向 WS
+    volumes:
+      - ./data/napcat/qq:/app/.config/QQ
+      - ./data/napcat/config:/app/napcat/config
+      - ./data/napcat/plugins:/app/napcat/plugins
+    mem_limit: 1200m
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+    networks: [botnet]
+    # 重启必须留足时间，否则 QQ 客户端来不及落盘会话，每次都要重新扫码
+    stop_grace_period: 60s
+
+  astrbot:
+    image: soulter/astrbot:latest
+    container_name: astrbot
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:6185:6185"   # 管理面板
+      - "127.0.0.1:6199:6199"   # 消息平台接入（NapCat 反连到这里）
+    volumes:
+      - ./data/astrbot:/AstrBot/data
+    mem_limit: 1200m
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+    networks: [botnet]
+
+networks:
+  botnet:
+    driver: bridge

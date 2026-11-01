@@ -1,0 +1,8 @@
+# 运行时数据，绝不能提交
+deploy/data/
+deploy/.env
+*.log
+
+# 本地草稿
+.DS_Store
+Thumbs.db
