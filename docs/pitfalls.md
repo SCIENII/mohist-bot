@@ -57,20 +57,37 @@ RequiresMountsFor=/mnt/ssd /mnt/data
 
 ---
 
-## 3. `docker stop napcat` 之后 QQ 掉登录，必须重新扫码
+## 3. 容器一停，QQ 就要重新扫码
 
-**症状**：重启 NapCat 容器后，`qrcode.png` 重新出现，QQ 需要重新登录。
+**症状**：重启或重建 NapCat 容器后，`qrcode.png` 重新出现，QQ 要重新登录。
 
-**原因**：`docker stop` 默认只给 10 秒，超时即 SIGKILL。QQ NT 客户端来不及把会话写回磁盘，下次启动被当成异常退出。
+**原因（三层，逐层排查出来的）**：
 
-**正确做法**：
+1. `docker stop` 默认只给 10 秒，超时即 SIGKILL。QQ NT 客户端来不及把会话写回磁盘。
+2. 容器**重建**（`docker compose up -d` 只要配置有变化就会重建）时 hostname 变成新的容器 ID，QQ 把它当成一台新设备。
+3. 最根本的一层：NapCat 的 entrypoint 是
 
 ```bash
-docker stop -t 60 napcat
+if [ -n "${ACCOUNT}" ]; then
+    gosu napcat /opt/QQ/qq --no-sandbox -q $ACCOUNT
+fi
 ```
 
-**推论**：任何"改配置后重启 NapCat"的操作前，先确认你能接受一次重新扫码。
-更稳的做法是把网络配置写好再首次登录，避免登录后再重启。
+没设 `ACCOUNT` 时根本不会尝试快速登录，永远落到扫码界面。
+
+**正确做法**（三条一起上）：
+
+```yaml
+environment:
+  ACCOUNT: "你的机器人QQ号"   # 走 -q 快速登录
+hostname: napcat                # 固定设备身份
+mac_address: "02:42:ac:14:00:03"
+stop_grace_period: 60s          # 给 QQ 落盘的时间
+```
+
+**实测结果**：改完之后重启整机，84 秒后容器全部起来、`qrcode.png` 不存在、OneBot 连接自动建立，**不需要扫码**。
+
+**注意**：配置改完的那一次重建仍然需要扫一次码。因为快速登录用的令牌是在"登录状态"下写出来的，先有登录才有令牌。
 
 ---
 
